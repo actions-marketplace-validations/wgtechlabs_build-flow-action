@@ -294,7 +294,7 @@ Source of truth: `.github/workflows/app.yml` (`on.workflow_call.inputs`).
 | `package-scope` | `""` | Package scope for GitHub Packages |
 | `package-path` | `./package.json` | Path to package manifest |
 | `package-build-script` | `build` | Build script to run before publishing |
-| `package-manager` | `auto` | Package manager to use (npm, yarn, pnpm, bun, auto) |
+| `package-manager` | `auto` | Package manager to use (npm, yarn, pnpm, bun, auto). Bun is installed in the package job when selected, or when `auto` may resolve to it |
 | `package-version-prefix` | `""` | Prefix for package version tags |
 | `package-audit-enabled` | `true` | Enable package-manager-aware security scanning |
 | `package-audit-level` | `high` | Minimum severity level for package security scanning |
@@ -458,7 +458,8 @@ Build Flow is designed for the [Clean Flow](https://github.com/wgtechlabs/clean-
 | PR to `dev` or `main` | CI + security gates + artifact publishing (enabled by default) |
 | Push to `dev` | CI + artifact publishing (enabled by default) |
 | Push to `main` | CI + version plan + publish enabled artifacts + finalize release when one publishes |
-| Release published | CI + artifact publishing (release mode in container primitive) |
+| Release published by a user | CI + artifact publishing (release mode in container primitive) |
+| Bot-authored release publication | Skipped to prevent a duplicate artifact build |
 | Manual dispatch | Configurable operational/recovery scenarios |
 
 ## Examples
