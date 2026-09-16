@@ -103,8 +103,9 @@ foreach ($flow in $contracts.Keys) {
     'if [[ "$GH_EVENT_NAME" == "release" && "$GH_EVENT_ACTION" == "published" && "$GH_SENDER_TYPE" != "Bot" ]]; then',
     'create-release: false',
     'tag-only: true',
-    "if: `${{ !inputs.release-dry-run && needs.context.outputs.allow-release-finalize == 'true'",
-    'run: echo "finalized-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"',
+    'Check existing release tag',
+    '!inputs.release-dry-run &&',
+    'finalized-sha=$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")',
     'gh release create "${args[@]}"'
   )) {
     if ($content -notmatch [regex]::Escape($required)) {

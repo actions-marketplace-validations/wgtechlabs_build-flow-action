@@ -885,7 +885,7 @@ jobs:
 
   package:
     name: Package flow
-    if: ${{ always() && inputs.enable-package && needs.context.outputs.allow-artifact-publish == 'true' && needs.ci-gate.result == 'success' && (needs.context.outputs.is-main != 'true' || (needs.source-finalize.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none')) }}
+    if: ${{ always() && inputs.enable-package && needs.context.outputs.allow-artifact-publish == 'true' && needs.ci-gate.result == 'success' && (needs.context.outputs.is-main != 'true' || inputs.release-dry-run || (needs.source-finalize.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none')) }}
     runs-on: ubuntu-latest
     needs: [context, ci-gate, version-plan, source-finalize]
     permissions:
@@ -947,7 +947,7 @@ jobs:
 
   container:
     name: Container flow
-    if: ${{ always() && inputs.enable-container && needs.context.outputs.allow-artifact-publish == 'true' && needs.ci-gate.result == 'success' && (needs.context.outputs.is-main != 'true' || (needs.source-finalize.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none')) }}
+    if: ${{ always() && inputs.enable-container && needs.context.outputs.allow-artifact-publish == 'true' && needs.ci-gate.result == 'success' && (needs.context.outputs.is-main != 'true' || inputs.release-dry-run || (needs.source-finalize.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none')) }}
     runs-on: ubuntu-latest
     needs: [context, ci-gate, version-plan, source-finalize]
     permissions:
@@ -1071,7 +1071,7 @@ jobs:
     needs: [context, ci-gate, version-plan]
     permissions:
       contents: write
-    if: ${{ !inputs.release-dry-run && needs.context.outputs.allow-release-finalize == 'true' && needs.ci-gate.result == 'success' && needs.version-plan.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none' }}
+    if: ${{ !inputs.release-dry-run && ((inputs.enable-package && inputs.package-publish-enabled) || (inputs.enable-container && inputs.container-push-enabled)) && needs.context.outputs.allow-release-finalize == 'true' && needs.ci-gate.result == 'success' && needs.version-plan.result == 'success' && needs.version-plan.outputs.planned-version-bump-type != 'none' }}
     outputs:
       finalized-sha: ${{ steps.source.outputs.finalized-sha }}
       changelog-entry: ${{ steps.release.outputs.changelog-entry }}
@@ -1082,8 +1082,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check existing release tag
+        id: tag-check
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.version-plan.outputs.planned-version-tag }}
+        run: |
+          if git rev-parse --verify "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Finalize source and create tag
         id: release
+        if: ${{ steps.tag-check.outputs.exists != 'true' }}
         uses: wgtechlabs/release-build-flow-action@6df9cb42c24c296d902150d051a0b6be4422cccc # v1.8.0
         with:
           changelog-path: ${{ inputs.release-changelog-path }}
@@ -1130,7 +1143,14 @@ jobs:
       - name: Export finalized commit
         id: source
         shell: bash
-        run: echo "finalized-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          RELEASE_TAG: ${{ needs.version-plan.outputs.planned-version-tag }}
+        run: |
+          if git rev-parse --verify "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "finalized-sha=$(git rev-list -n 1 "refs/tags/$RELEASE_TAG")" >> "$GITHUB_OUTPUT"
+          else
+            echo "finalized-sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
 
   release:
     name: Release publish (last)

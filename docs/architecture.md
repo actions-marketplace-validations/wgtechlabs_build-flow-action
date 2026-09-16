@@ -91,7 +91,7 @@ Each flow runs the same staged model:
 
 - **Pull request** → run CI and preview checks; do not publish a production release.
 - **Push to `dev`** → run CI; optionally publish development artifacts; no production release.
-- **Push to `main`** → run CI and gates; calculate one dry-run version plan; publish planned artifacts only for a non-`none` bump; finalize only after an enabled target reports publication.
+- **Push to `main`** → run CI and gates; calculate one dry-run version plan; publish planned artifacts only for a non-`none` bump; finalize source before building enabled artifacts, then publish the GitHub Release only after every enabled target reports publication.
 - **Release (`published`)** → allow artifact publishing for human-published releases. Bot-authored publication events are ignored so an orchestrated release cannot trigger a duplicate build.
 - **Manual dispatch / unknown events** → resolve to the primitives' own `wip` flow.
 
@@ -112,7 +112,7 @@ Because reusable-workflow permissions are bounded by the caller, **example/consu
 
 ### Required secrets / checkout per primitive
 
-- **package** — `npm-token` (`secrets.NPM_TOKEN`) is mandatory when `registry` includes npm (default `both`); the primitive hard-fails without it. The package primitive checks out its own repo internally (`fetch-depth: 0`) when no manifest is present, so the package job needs no external checkout.
+- **package** — `npm-token` (`secrets.NPM_TOKEN`) is mandatory when `registry` includes npm (default `both`); the primitive hard-fails without it. The primitive can check out its own repo internally when no manifest is present, but release orchestration must explicitly check out the finalized commit before running it.
 - **container** — `dockerhub-username` / `dockerhub-token` for Docker Hub (default registry `both`). The container job **must** check out the finalized commit and **must** run `docker/setup-qemu-action` before the primitive, because the primitive builds the caller workspace and the default `release-platforms` is multi-arch (`linux/amd64,linux/arm64`). Its built-in revision metadata uses the triggering `github.sha`, so the orchestration overrides `org.opencontainers.image.revision` with the finalized SHA.
 - **release** — requires `actions/checkout` with `fetch-depth: 0` before it runs. Its tag creation is not idempotent, so it runs once in tag-only mode to finalize source; the later GitHub Release publication must not invoke the primitive again.
 
