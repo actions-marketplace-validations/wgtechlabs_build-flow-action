@@ -7,10 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
 
-- build release artifacts from the finalized version commit before publishing the GitHub Release
-- ignore bot-authored release publication events to prevent duplicate artifact builds
+## [0.2.1] - 2026-09-16
+
+### Changed
+
+- address workflow review findings
+- install bun before the package primitive (#44)
+- build artifacts from finalized source (#45)
+- install bun before the package primitive
 
 ## [0.2.0] - 2026-08-20
 
