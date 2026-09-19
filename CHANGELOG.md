@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 
+## [0.2.1] - 2026-09-16
+
+### Changed
+
+- address workflow review findings
+- install bun before the package primitive (#44)
+- build artifacts from finalized source (#45)
+- install bun before the package primitive
+
 ## [0.2.0] - 2026-08-20
 
 ### Added
@@ -128,4 +137,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 - harden workflows against injection, pin actions, tighten permissions (#4)
-
